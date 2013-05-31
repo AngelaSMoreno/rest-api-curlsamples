@@ -283,7 +283,7 @@ echo "Payment Created successfully: " . $json_resp['id'] ." with state '". $json
 echo "\n \n";
 echo "###########################################\n";
 echo "Obtaining all Payments (list) ... \n";
-$payment_list_url = $host.'/v1/payments/payment';
+$payment_list_url = $host.'/v1/payments/payment?start_id=PAY-1JJ14633E59990232KE6QU3I';
 $json_resp = make_get_call($payment_list_url);
 echo "Number of Payment resources returned: " . count($json_resp['payments']);
 $counter = 0;
@@ -308,6 +308,169 @@ $counter = 0;
 foreach ($json_resp['payments'] as $payment) {
         echo "\n" . $counter++ . ". " . $payment['id'];
 }
+echo "\n \n";
+echo "###########################################\n";
+echo "Making a Credit Card Authorization... \n";
+$url = $host.'/v1/payments/payment';
+$payment = array(
+                'intent' => 'authorize',
+                'payer' => array(
+                        'payment_method' => 'credit_card',
+                        'funding_instruments' => array ( array(
+                                        'credit_card' => array (
+                                                'number' => '5500005555555559',
+                                                'type'   => 'mastercard',
+                                                'expire_month' => 12,
+                                                'expire_year' => 2018,
+                                                'cvv2' => 111,
+                                                'first_name' => 'Joe',
+                                                'last_name' => 'Shopper'
+                                                )
+                                        ))
+                        ),
+                'transactions' => array (array(
+                                'amount' => array(
+                                        'total' => '7.47',
+                                        'currency' => 'USD'
+                                        ),
+                                'description' => 'payment by a credit card using a test script'
+                                ))
+                );
+$json = json_encode($payment);
+$json_resp = make_post_call($url, $json);
+foreach ($json_resp['links'] as $link) {
+        if($link['rel'] == 'self'){
+                $payment_detail_url = $link['href'];
+                $payment_detail_method = $link['method'];
+        }
+}
+$related_resource_count = 0;
+$related_resources = "";
+foreach ($json_resp['transactions'] as $transaction) {
+        if($transaction['related_resources']) {
+                $related_resource_count = count($transaction['related_resources']);
+                foreach ($transaction['related_resources'] as $related_resource) {
+                        if($related_resource['authorization']){
+                                $related_resources = $related_resources."authorization ";
+                                $authorization = $related_resource['authorization'];
+                                foreach ($authorization['links'] as $link) {
+                                        if($link['rel'] == 'self'){
+                                                $auth_detail_url = $link['href'];
+                                                $auth_detail_method = $link['method'];
+                                        }else if($link['rel'] == 'refund'){
+                                                $refund_url = $link['href'];
+                                                $refund_method = $link['method'];
+                                        }else if($link['rel'] == 'void'){
+                                                $void_url = $link['href'];
+                                                $void_method = $link['method'];
+                                        }else if($link['rel'] == 'capture'){
+                                                $capture_url = $link['href'];
+                                                $capture_method = $link['method'];
+                                        }
+                                }
+                        } else if($related_resource['refund']){
+                                $related_resources = $related_resources."refund";
+                        }
+                }
+        }
+}
+
+echo "Payment Created successfully: " . $json_resp['id'] ." with state '". $json_resp['state']."'\n";
+echo "Payment related_resources:". $related_resource_count . "(". $related_resources.")";
+echo "\n \n";
+echo "###########################################\n";
+echo "Obtaining Payment Details... \n";
+$json_resp = make_get_call($payment_detail_url);
+echo "Payment details obtained for: " . $json_resp['id'] ." with state '". $json_resp['state']. "'";
+echo "\n \n";
+echo "###########################################\n";
+echo "Obtaining Authorization details...\n";
+$json_resp = make_get_call($auth_detail_url);
+echo "Authorization details obtained for: " . $json_resp['id'] ." with state '". $json_resp['state']."'";
+echo "\n \n";
+echo "###########################################\n";
+echo "Capturing Authorization ...\n";
+$capture = array(
+                'amount' => array(
+                        'total' => '5.47',
+                        'currency' => 'USD'
+                        )
+               );
+$json = json_encode($capture);
+$json_resp = make_post_call($capture_url, $json);
+echo "Capture processed " . $json_resp['id'] ." with state '". $json_resp['state']."'";
+foreach ($json_resp['links'] as $link) {
+        if($link['rel'] == 'self'){
+                $capture_detail_url = $link['href'];
+                $capture_detail_method = $link['method'];
+        }else if($link['rel'] == 'refund'){
+                    $refund_url = $link['href'];
+                    $refund_method = $link['method'];
+            }
+}
+echo "\n \n";
+echo "###########################################\n";
+echo "Obtaining Authorization details...\n";
+$json_resp = make_get_call($auth_detail_url);
+echo "Authorization details obtained for: " . $json_resp['id'] ." with state '". $json_resp['state']."'";
+echo "\n \n";
+echo "###########################################\n";
+echo "Obtaining Capture details...\n";
+$json_resp = make_get_call($capture_detail_url);
+echo "Capture details obtained for: " . $json_resp['id'] ." with state '". $json_resp['state']."'";
+echo "\n \n";
+echo "###########################################\n";
+echo "Refunding a Capture... \n";
+$refund = array(
+                'amount' => array(
+                        'total' => '2.47',
+                        'currency' => 'USD'
+                        )
+               );
+$json = json_encode($refund);
+$json_resp = make_post_call($refund_url, $json);
+echo "Refund processed " . $json_resp['id'] ." with state '". $json_resp['state']."'";
+echo "\n \n";
+echo "###########################################\n";
+echo "Obtaining Capture details...\n";
+$json_resp = make_get_call($capture_detail_url);
+echo "Capture details obtained for: " . $json_resp['id'] ." with state '". $json_resp['state']."'";
+echo "\n \n";
+echo "###########################################\n";
+echo "Voiding Authorization ...\n";
+$void = array();
+$json = json_encode($void);
+$json_resp = make_post_call($void_url, $json);
+echo "Void processed " . $json_resp['id'] ." with state '". $json_resp['state']."'";
+echo "\n \n";
+echo "###########################################\n";
+echo "Obtaining Authorization details...\n";
+$json_resp = make_get_call($auth_detail_url);
+echo "Authorization details obtained for: " . $json_resp['id'] ." with state '". $json_resp['state']."'";
+echo "\n \n";
+echo "###########################################\n";
+echo "Obtaining parent Payment Details for the Authorization ... \n";
+$json_resp = make_get_call($payment_detail_url);
+$related_resource_count = 0;
+$related_resources = "";
+foreach ($json_resp['transactions'] as $transaction) {
+        if($transaction['related_resources']) {
+                $related_resource_count = count($transaction['related_resources']);
+                foreach ($transaction['related_resources'] as $related_resource) {
+                        if($related_resource['authorization']){
+                                $related_resources = $related_resources."authorization ";
+                        } else if($related_resource['capture']){
+                                $related_resources = $related_resources."capture ";
+                        } else if($related_resource['refund']){
+	                            $related_resources = $related_resources."refund ";
+	                       }
+                }
+
+        }
+}
+
+echo "Payment details obtained for: " . $json_resp['id'] ." with state '". $json_resp['state']. "' \n";
+echo "Payment related_resources:". $related_resource_count . "(". $related_resources.")";
 echo "\n \n";
 echo "###########################################\n";
 echo "Initiating a Payment with PayPal Account... \n";
