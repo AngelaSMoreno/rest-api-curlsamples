@@ -1,4 +1,4 @@
-curl -v -k -H 'Content-Type: application/json' \
+curl -v -H 'Content-Type: application/json' \
 	   -H 'Accept: application/json' \
 	   -H 'Authorization: Bearer sGn0QA7SWFihuqpZiRgSpvUriKlPplr5rAymuDPQGLI' \
 	  -X POST \

@@ -1,4 +1,4 @@
-curl -v -k -H 'Content-Type: application/json' \
+curl -v -H 'Content-Type: application/json' \
 	   -H 'Accept: application/json' \
 	   -H 'Authorization: Bearer bFygE4aBwbVCt.vCtWG1uKFwIBymNCoWftx1q2YEiJA' \
 	   -d '{ "amount":{ "total":"3.01", "currency":"USD" } }' \

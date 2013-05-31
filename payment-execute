@@ -1,4 +1,4 @@
-curl -v -k -H 'Content-Type: application/json' \
+curl -v -H 'Content-Type: application/json' \
 	   -H 'Accept: application/json' \
 	   -H 'Authorization: Bearer EMXFvV1YzVf7OS5UG8B8dE3WsOpXrn88OrCkgPAOLzSJ' \
 	   -d '{ "payer_id" : "N3SWCAHHS92FU" }' \
